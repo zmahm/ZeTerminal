@@ -83,7 +83,7 @@ export default function QuotePanel({ symbol }: QuotePanelProps) {
     );
   }
 
-  const getValue = (key: string, fallback?: any) => {
+  const getValue = (key: keyof Quote, fallback?: any) => {
     if (quote[key]) return quote[key];
     if (fallback !== undefined) return fallback;
     return 'N/A';
