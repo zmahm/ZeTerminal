@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  @apply bg-zeterminal-dark text-zeterminal-text font-mono;
+  overflow: hidden;
+  height: 100vh;
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #30363d #161b22;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #161b22;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 4px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #484f58;
+  }
+  
+  .zeterminal-border {
+    @apply border border-zeterminal-border;
+  }
+  
+  .zeterminal-panel {
+    @apply bg-zeterminal-panel zeterminal-border rounded;
+  }
+  
+  .zeterminal-button {
+    @apply px-3 py-1 bg-zeterminal-panel zeterminal-border text-zeterminal-text hover:bg-zeterminal-border transition-colors;
+  }
+  
+  .price-up {
+    @apply text-zeterminal-green;
+  }
+  
+  .price-down {
+    @apply text-zeterminal-red;
+  }
+}
+
