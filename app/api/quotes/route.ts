@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getQuote, getYahooQuote } from '@/lib/api';
+import { Quote } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
     });
 
     const results = await Promise.all(promises);
-    const quotes = results.filter(Boolean);
+    const quotes = results.filter((quote): quote is Quote => quote !== null);
 
     return NextResponse.json(quotes);
   } catch (error) {

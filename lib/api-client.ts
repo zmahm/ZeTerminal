@@ -89,7 +89,7 @@ export const getMultipleQuotes = async (symbols: string[], signal?: AbortSignal)
     if (!response.ok) {
       const promises = symbols.map(symbol => getQuote(symbol, signal));
       const results = await Promise.all(promises);
-      return results.filter(Boolean).map((quote: Quote, index) => ({
+      return results.filter((quote): quote is Quote => quote !== null).map((quote, index) => ({
         ...quote,
         symbol: quote.symbol || quote['01. symbol'] || symbols[index],
       }));

@@ -191,7 +191,7 @@ export const getMultipleQuotes = async (symbols: string[]): Promise<Quote[]> => 
       ])
     );
     const results = await Promise.all(promises);
-    return results.filter(Boolean);
+    return results.filter((quote): quote is Quote => quote !== null);
   } catch (error) {
     console.error('Error fetching multiple quotes:', error);
     return [];
