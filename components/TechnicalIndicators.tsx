@@ -13,23 +13,33 @@ export default function TechnicalIndicators({ symbol }: TechnicalIndicatorsProps
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    
     const fetchData = async () => {
       if (!symbol) return;
       
       setIsLoading(true);
       try {
-        const dailyData = await getDailyData(symbol);
-        if (dailyData && dailyData.length > 0) {
-          setData(dailyData.slice(-20)); // Last 20 days
+        const dailyData = await getDailyData(symbol, abortController.signal);
+        if (!abortController.signal.aborted && dailyData && dailyData.length > 0) {
+          setData(dailyData.slice(-20));
         }
-      } catch (error) {
-        console.error('Error fetching technical data:', error);
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error('Error fetching technical data:', error);
+        }
       } finally {
-        setIsLoading(false);
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchData();
+    
+    return () => {
+      abortController.abort();
+    };
   }, [symbol]);
 
   const calculateSMA = (period: number) => {

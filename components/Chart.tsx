@@ -17,6 +17,8 @@ export default function Chart({ symbol, interval = 'intraday' }: ChartProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    
     const fetchData = async () => {
       if (!symbol) return;
       
@@ -26,27 +28,36 @@ export default function Chart({ symbol, interval = 'intraday' }: ChartProps) {
       try {
         let chartData;
         if (interval === 'intraday') {
-          chartData = await getIntradayData(symbol);
+          chartData = await getIntradayData(symbol, abortController.signal);
         } else {
-          chartData = await getDailyData(symbol);
+          chartData = await getDailyData(symbol, abortController.signal);
         }
+        
+        if (abortController.signal.aborted) return;
         
         if (chartData && chartData.length > 0) {
           setData(chartData.slice(-100));
         } else {
           setError('No chart data available');
         }
-      } catch (err) {
-        setError('Failed to fetch chart data');
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          setError('Failed to fetch chart data');
+        }
       } finally {
-        setIsLoading(false);
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchData();
     const refreshInterval = setInterval(fetchData, 60000);
 
-    return () => clearInterval(refreshInterval);
+    return () => {
+      clearInterval(refreshInterval);
+      abortController.abort();
+    };
   }, [symbol, interval]);
 
   if (isLoading) {

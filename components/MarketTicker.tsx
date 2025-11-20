@@ -12,17 +12,24 @@ export default function MarketTicker() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    
     const fetchQuotes = async () => {
       setIsLoading(true);
-      const data = await getMultipleQuotes(DEFAULT_SYMBOLS);
-      setQuotes(data);
-      setIsLoading(false);
+      const data = await getMultipleQuotes(DEFAULT_SYMBOLS, abortController.signal);
+      if (!abortController.signal.aborted) {
+        setQuotes(data);
+        setIsLoading(false);
+      }
     };
 
     fetchQuotes();
-    const interval = setInterval(fetchQuotes, 30000); // Update every 30 seconds
+    const interval = setInterval(fetchQuotes, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      abortController.abort();
+    };
   }, []);
 
   const getPrice = (quote: Quote) => {

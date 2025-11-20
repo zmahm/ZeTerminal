@@ -15,6 +15,8 @@ export default function QuotePanel({ symbol }: QuotePanelProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    
     const fetchQuote = async () => {
       if (!symbol) return;
       
@@ -22,24 +24,33 @@ export default function QuotePanel({ symbol }: QuotePanelProps) {
       setError(null);
       
       try {
-        const data = await getQuote(symbol);
+        const data = await getQuote(symbol, abortController.signal);
+        
+        if (abortController.signal.aborted) return;
         
         if (data) {
           setQuote(data);
         } else {
           setError('Symbol not found');
         }
-      } catch (err) {
-        setError('Failed to fetch quote');
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          setError('Failed to fetch quote');
+        }
       } finally {
-        setIsLoading(false);
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchQuote();
     const interval = setInterval(fetchQuote, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      abortController.abort();
+    };
   }, [symbol]);
 
   if (isLoading) {

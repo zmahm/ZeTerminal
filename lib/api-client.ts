@@ -1,19 +1,21 @@
 import { Quote, ChartDataPoint, NewsArticle, SearchResult } from './types';
 
-export const getQuote = async (symbol: string): Promise<Quote | null> => {
+export const getQuote = async (symbol: string, signal?: AbortSignal): Promise<Quote | null> => {
   try {
-    const response = await fetch(`/api/quote?symbol=${encodeURIComponent(symbol)}`);
+    const response = await fetch(`/api/quote?symbol=${encodeURIComponent(symbol)}`, { signal });
     if (!response.ok) return null;
     return await response.json();
-  } catch (error) {
-    console.error('Error fetching quote:', error);
+  } catch (error: any) {
+    if (error.name !== 'AbortError') {
+      console.error('Error fetching quote:', error);
+    }
     return null;
   }
 };
 
-export const getIntradayData = async (symbol: string): Promise<ChartDataPoint[] | null> => {
+export const getIntradayData = async (symbol: string, signal?: AbortSignal): Promise<ChartDataPoint[] | null> => {
   try {
-    const response = await fetch(`/api/chart?symbol=${encodeURIComponent(symbol)}&interval=intraday`);
+    const response = await fetch(`/api/chart?symbol=${encodeURIComponent(symbol)}&interval=intraday`, { signal });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       if (errorData.error) {
@@ -23,49 +25,57 @@ export const getIntradayData = async (symbol: string): Promise<ChartDataPoint[] 
     }
     const data = await response.json();
     return Array.isArray(data) ? data : null;
-  } catch (error) {
-    console.error('Error fetching intraday data:', error);
+  } catch (error: any) {
+    if (error.name !== 'AbortError') {
+      console.error('Error fetching intraday data:', error);
+    }
     return null;
   }
 };
 
-export const getDailyData = async (symbol: string): Promise<ChartDataPoint[] | null> => {
+export const getDailyData = async (symbol: string, signal?: AbortSignal): Promise<ChartDataPoint[] | null> => {
   try {
-    const response = await fetch(`/api/chart?symbol=${encodeURIComponent(symbol)}&interval=daily`);
+    const response = await fetch(`/api/chart?symbol=${encodeURIComponent(symbol)}&interval=daily`, { signal });
     if (!response.ok) return null;
     return await response.json();
-  } catch (error) {
-    console.error('Error fetching daily data:', error);
+  } catch (error: any) {
+    if (error.name !== 'AbortError') {
+      console.error('Error fetching daily data:', error);
+    }
     return null;
   }
 };
 
-export const getSearchResults = async (keywords: string): Promise<SearchResult[]> => {
+export const getSearchResults = async (keywords: string, signal?: AbortSignal): Promise<SearchResult[]> => {
   try {
-    const response = await fetch(`/api/search?q=${encodeURIComponent(keywords)}`);
+    const response = await fetch(`/api/search?q=${encodeURIComponent(keywords)}`, { signal });
     if (!response.ok) return [];
     return await response.json();
-  } catch (error) {
-    console.error('Error searching:', error);
+  } catch (error: any) {
+    if (error.name !== 'AbortError') {
+      console.error('Error searching:', error);
+    }
     return [];
   }
 };
 
-export const getNews = async (symbol?: string): Promise<NewsArticle[]> => {
+export const getNews = async (symbol?: string, signal?: AbortSignal): Promise<NewsArticle[]> => {
   try {
     const url = symbol 
       ? `/api/news?symbol=${encodeURIComponent(symbol)}`
       : '/api/news';
-    const response = await fetch(url);
+    const response = await fetch(url, { signal });
     if (!response.ok) return [];
     return await response.json();
-  } catch (error) {
-    console.error('Error fetching news:', error);
+  } catch (error: any) {
+    if (error.name !== 'AbortError') {
+      console.error('Error fetching news:', error);
+    }
     return [];
   }
 };
 
-export const getMultipleQuotes = async (symbols: string[]): Promise<Quote[]> => {
+export const getMultipleQuotes = async (symbols: string[], signal?: AbortSignal): Promise<Quote[]> => {
   try {
     const response = await fetch('/api/quotes', {
       method: 'POST',
@@ -73,10 +83,11 @@ export const getMultipleQuotes = async (symbols: string[]): Promise<Quote[]> => 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ symbols }),
+      signal,
     });
     
     if (!response.ok) {
-      const promises = symbols.map(symbol => getQuote(symbol));
+      const promises = symbols.map(symbol => getQuote(symbol, signal));
       const results = await Promise.all(promises);
       return results.filter(Boolean).map((quote: Quote, index) => ({
         ...quote,
@@ -85,8 +96,10 @@ export const getMultipleQuotes = async (symbols: string[]): Promise<Quote[]> => 
     }
     
     return await response.json();
-  } catch (error) {
-    console.error('Error fetching multiple quotes:', error);
+  } catch (error: any) {
+    if (error.name !== 'AbortError') {
+      console.error('Error fetching multiple quotes:', error);
+    }
     return [];
   }
 };

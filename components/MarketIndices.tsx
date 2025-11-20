@@ -17,29 +17,39 @@ export default function MarketIndices() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    
     const fetchIndices = async () => {
       setIsLoading(true);
-      const quotesMap: Record<string, any> = {};
+      const quotesMap: Record<string, Quote> = {};
 
       for (const index of INDICES) {
+        if (abortController.signal.aborted) break;
         try {
-          const quote = await getQuote(index.symbol);
+          const quote = await getQuote(index.symbol, abortController.signal);
           if (quote) {
             quotesMap[index.symbol] = quote;
           }
-        } catch (error) {
-          console.error(`Error fetching ${index.symbol}:`, error);
+        } catch (error: any) {
+          if (error.name !== 'AbortError') {
+            console.error(`Error fetching ${index.symbol}:`, error);
+          }
         }
       }
 
-      setQuotes(quotesMap);
-      setIsLoading(false);
+      if (!abortController.signal.aborted) {
+        setQuotes(quotesMap);
+        setIsLoading(false);
+      }
     };
 
     fetchIndices();
     const interval = setInterval(fetchIndices, 60000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      abortController.abort();
+    };
   }, []);
 
   const getPrice = (quote: any) => {

@@ -15,6 +15,8 @@ export default function SearchBar({ onSymbolSelect }: SearchBarProps) {
   const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    
     const search = async () => {
       if (query.length < 2) {
         setResults([]);
@@ -24,19 +26,28 @@ export default function SearchBar({ onSymbolSelect }: SearchBarProps) {
 
       setIsSearching(true);
       try {
-        const searchResults = await getSearchResults(query);
-        setResults(searchResults.slice(0, 10)); // Limit to 10 results
-        setShowResults(true);
-      } catch (error) {
-        console.error('Search error:', error);
-        setResults([]);
+        const searchResults = await getSearchResults(query, abortController.signal);
+        if (!abortController.signal.aborted) {
+          setResults(searchResults.slice(0, 10));
+          setShowResults(true);
+        }
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error('Search error:', error);
+          setResults([]);
+        }
       } finally {
-        setIsSearching(false);
+        if (!abortController.signal.aborted) {
+          setIsSearching(false);
+        }
       }
     };
 
     const debounceTimer = setTimeout(search, 300);
-    return () => clearTimeout(debounceTimer);
+    return () => {
+      clearTimeout(debounceTimer);
+      abortController.abort();
+    };
   }, [query]);
 
   const handleSelect = (symbol: string) => {

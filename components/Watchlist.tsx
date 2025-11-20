@@ -15,6 +15,8 @@ export default function Watchlist({ symbols, onSymbolSelect }: WatchlistProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    
     const fetchQuotes = async () => {
       if (symbols.length === 0) {
         setIsLoading(false);
@@ -22,15 +24,20 @@ export default function Watchlist({ symbols, onSymbolSelect }: WatchlistProps) {
       }
       
       setIsLoading(true);
-      const data = await getMultipleQuotes(symbols);
-      setQuotes(data);
-      setIsLoading(false);
+      const data = await getMultipleQuotes(symbols, abortController.signal);
+      if (!abortController.signal.aborted) {
+        setQuotes(data);
+        setIsLoading(false);
+      }
     };
 
     fetchQuotes();
-    const interval = setInterval(fetchQuotes, 30000); // Update every 30 seconds
+    const interval = setInterval(fetchQuotes, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      abortController.abort();
+    };
   }, [symbols]);
 
   const getPrice = (quote: Quote) => {

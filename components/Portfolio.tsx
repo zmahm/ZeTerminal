@@ -14,6 +14,8 @@ export default function Portfolio({ positions, onRemovePosition }: PortfolioProp
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    
     const fetchQuotes = async () => {
       if (positions.length === 0) {
         setIsLoading(false);
@@ -22,7 +24,9 @@ export default function Portfolio({ positions, onRemovePosition }: PortfolioProp
 
       setIsLoading(true);
       const symbols = positions.map(p => p.symbol);
-      const data = await getMultipleQuotes(symbols);
+      const data = await getMultipleQuotes(symbols, abortController.signal);
+      
+      if (abortController.signal.aborted) return;
       
       const quotesMap: Record<string, Quote> = {};
       data.forEach((quote: Quote) => {
@@ -37,7 +41,10 @@ export default function Portfolio({ positions, onRemovePosition }: PortfolioProp
     fetchQuotes();
     const interval = setInterval(fetchQuotes, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      abortController.abort();
+    };
   }, [positions]);
 
   const getCurrentPrice = (symbol: string) => {

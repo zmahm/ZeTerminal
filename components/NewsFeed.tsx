@@ -15,31 +15,42 @@ export default function NewsFeed({ symbol }: NewsFeedProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    
     const fetchNews = async () => {
       setIsLoading(true);
       try {
-        const news = await getNews(symbol);
-        setArticles(news.slice(0, 10));
-      } catch (error) {
-        console.error('Error fetching news:', error);
-        setArticles([
-          {
-            title: 'Market Update: Stocks Rally on Economic Data',
-            description: 'Major indices closed higher as investors digest latest economic indicators.',
-            url: '#',
-            publishedAt: new Date().toISOString(),
-            source: { name: 'Financial Times' },
-          },
-        ]);
+        const news = await getNews(symbol, abortController.signal);
+        if (!abortController.signal.aborted) {
+          setArticles(news.slice(0, 10));
+        }
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error('Error fetching news:', error);
+          setArticles([
+            {
+              title: 'Market Update: Stocks Rally on Economic Data',
+              description: 'Major indices closed higher as investors digest latest economic indicators.',
+              url: '#',
+              publishedAt: new Date().toISOString(),
+              source: { name: 'Financial Times' },
+            },
+          ]);
+        }
       } finally {
-        setIsLoading(false);
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchNews();
     const interval = setInterval(fetchNews, 300000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      abortController.abort();
+    };
   }, [symbol]);
 
   if (isLoading) {
